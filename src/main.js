@@ -56,7 +56,7 @@ const SLIDES = [
   },
 ];
 
-const IMG_PARAMS = "?q=80&w=900&auto=format&fit=crop";
+const imgParams = (w) => `?q=80&w=${w}&auto=format&fit=crop`;
 const FALLBACK_GRADIENTS = [
   "linear-gradient(135deg,#ff2d91,#5b2bff)",
   "linear-gradient(135deg,#00e5ff,#7b2bff)",
@@ -83,7 +83,7 @@ const cards = SLIDES.map((slide, i) => {
   el.className = "card";
   el.innerHTML = `
     <div class="card__img-wrap">
-      <img src="${slide.src}${IMG_PARAMS}" alt="${slide.title}" draggable="false" />
+      <img alt="${slide.title}" draggable="false" />
       <div class="card__shade"></div>
     </div>
   `;
@@ -101,6 +101,19 @@ const cards = SLIDES.map((slide, i) => {
     index: i,
   };
 });
+
+// request images at the size the cards actually render at: the frame bleeds
+// the image to 150% for the parallax and the hero card is scaled to 1.24, so
+// both multiply the intrinsic width we need. DPR is capped at 2 because the
+// third density step is not visible behind the shade and grain.
+{
+  const cardW = parseFloat(getComputedStyle(cards[0].el).width) || 300;
+  const need = cardW * 1.5 * 1.24 * Math.min(devicePixelRatio, 2);
+  const width = Math.ceil(need / 100) * 100;
+  cards.forEach((card) => {
+    card.img.src = SLIDES[card.index].src + imgParams(width);
+  });
+}
 
 /* ------------------------------------------------------------------ state */
 
@@ -126,14 +139,18 @@ let autoplayTimer = null;
 /* ------------------------------------------------------------------ layout */
 
 function resize() {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  // spacing below the card width so neighbouring cards still overlap, with more air
-  state.spacingX = Math.min(vw * 0.175, 270);
-  state.spacingY = Math.min(vh * 0.14, state.spacingX * 0.46);
+  // derive spacing from the rendered card width (CSS owns the responsive
+  // sizing) so the overlap between neighbours is identical at every viewport
+  const cardW = parseFloat(getComputedStyle(cards[0].el).width) || 300;
+  state.spacingX = cardW * 0.86;
+  state.spacingY = Math.min(
+    window.innerHeight * 0.14,
+    state.spacingX * 0.46,
+  );
   state.pxPerUnit = state.spacingX; // drag conversion
 }
 window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", resize);
 resize();
 
 /** shortest wrapped distance from the current position to card i */

@@ -3,7 +3,9 @@
   --ink: #f4f2ff;
   --ink-dim: rgba(244, 242, 255, 0.42);
   --accent: #b26bff;
-  --card-w: clamp(180px, 21vw, 300px);
+  /* width follows the viewport, but the height cap keeps the scaled-up hero
+     card on screen in landscape phones where vh is the tight axis */
+  --card-w: min(clamp(190px, 21vw, 300px), 46vh);
   --card-ratio: 1.42;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --font-display: "Syne", system-ui, sans-serif;
@@ -21,9 +23,12 @@ html,
 body {
   height: 100%;
   overflow: hidden;
+  /* stops iOS/Android pull-to-refresh and rubber-banding during a drag */
+  overscroll-behavior: none;
   background: var(--bg);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ---------- stage ---------- */
@@ -238,5 +243,66 @@ body {
   }
   .cursor {
     display: none;
+  }
+}
+
+/* ---------- responsive ---------- */
+
+/* tablets and landscape phones: the vh term in --card-w does the work
+   when the viewport is short, the vw term when it is narrow */
+@media (max-width: 900px) {
+  :root {
+    --card-w: min(46vw, 44vh);
+  }
+}
+
+@media (max-width: 560px) {
+  :root {
+    --card-w: min(58vw, 42vh);
+  }
+
+  .hud {
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .hud__title {
+    font-size: clamp(20px, 6.4vw, 30px);
+  }
+
+  .hud__role {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+  }
+
+  /* the blur is the most expensive layer on the page and reads as a flat
+     wash at this size anyway */
+  .stage__glow {
+    filter: blur(24px);
+  }
+
+  .stage__grain {
+    opacity: 0.35;
+  }
+}
+
+/* landscape phones: vh is scarce and the HUD still needs its band at the
+   bottom, so the card is capped harder than the general short-viewport rule */
+@media (max-height: 480px) and (orientation: landscape) {
+  :root {
+    --card-w: min(46vw, 37vh);
+  }
+
+  .hud {
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .hud__title {
+    font-size: clamp(18px, 2.4vw, 26px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor {
+    transition: none;
   }
 }
